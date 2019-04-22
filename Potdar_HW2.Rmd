@@ -1,0 +1,149 @@
+---
+title: "Assignment 2"
+output: html_document
+---
+## 1
+
+```{r}
+library(tidyverse)
+library(ggplot2)
+data(mpg)
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy))
+# Template for mapping 
+# ggplot(data = <DATA>) + 
+#  <GEOM_FUNCTION>(mapping = aes(<MAPPINGS>))
+```
+a)  3.2.4 Exercises #4, #5
+```{r}
+#4
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x=cyl,y=hwy))
+
+#5
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x=drv,y=class))
+
+```
+The plot for #5 is of not much use as it doesnt any correlation between the two varibles ["type of car" and "type of drive (front wheel, rear wheel or all wheels)"]
+
+a)  3.3.1 Exercises #3, #4, #6 
+```{r}
+#3
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = cyl))
+
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, size = cyl))
+
+#ggplot(data = mpg) + 
+ # geom_point(mapping = aes(x = displ, y = hwy, shape = cyl)) 
+#Error: A continuous variable can not be mapped to shape
+```
+While continuous variables do not get mapped to shape, categorical variables do. Also the categorical variables when represented through size do not give logical information as opposed to continuous variables.
+
+```{r}
+#4
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, color = cyl, size=cyl))
+#The variable is represented through the multiple asethetics
+
+#6
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy, colour = displ < 5))
+```
+It differentiates the cars that have displ more than 5 from the ones that have it less than 5 using color coding.
+
+a)  3.5.1 Exercises #4
+```{r}
+#4
+ggplot(data = mpg) + 
+  geom_point(mapping = aes(x = displ, y = hwy)) + 
+  facet_wrap(~ class, nrow = 2)
+```
+Faceting makes the difference amongst the varibles stand out, especially when the number of varibles to be represented is higher. Colouring makes it difficult to infer specific differentiation amongst the variables. However faceting doesnt provide the bigger picture as opposed to coloring, wherein you observe the entire dataset as a whole. Also faceting takes time to read while colours are easy on the eye when in shorter numbers.
+
+b)
+```{r}
+base1 <- ggplot(data = mpg, mapping = aes(x = displ, y = hwy))
+base1 + geom_point(alpha=0.3,position = "jitter") + geom_smooth()+ geom_smooth(method=lm,colour="black",se=FALSE)+
+  facet_grid(.~drv)+xlab("Displacement")+ylab("Highway MPG")
+```
+
+##2 Generating data and advanced density plots
+(A)
+```{r}
+df <- data.frame(matrix(ncol = 4, nrow = 500))
+colnames(df) <- c("a","b","c","d")
+df$a=rnorm(500)
+df$b=rlnorm(500)
+df$c=rexp(500)
+df$d=runif(500)
+library(tidyr)
+df2=gather(df, key = "groupVar", value = "value",a:d)
+head(df2)
+```
+(B)
+```{r}
+ggplot(df2,aes(value))+geom_density(alpha=0.3,aes(colour=groupVar),size=0.8)+
+  labs(title="Density Distribution")
+```
+
+##3 House prices data 
+```{r}
+house=read.csv("housingData.csv")
+ggplot(house)+geom_jitter(aes(x=HeatingQC,y=Electrical))
+#shows that the Standard Circuit Breakers & Romex are the best circuit systems
+#to be used as the show the Above Average Heating conditions
+
+ggplot(house, aes(x=SalePrice, color=Fence)) +
+  geom_density(aes(fill=Fence)) +
+  facet_wrap(~Neighborhood)
+#We find that Brookside neighborhood has lower priced property giving good privacy
+#through its fencing. Similarly we find Crawford giving good privacy too.
+
+ggplot(house,aes())+geom_jitter(aes(y=PavedDrive,x=GarageType),colour="Blue")
+#Most of the Garages that are attached to the home have a Paved Drive.  
+
+ggplot(house, aes(x=SalePrice)) +
+  geom_histogram(stat="bin",fill="Light Blue")
+#Most of the sales happened for the range of 100000 to 200000 dollars
+
+ggplot(house, aes(x=MSZoning,y=SalePrice)) +
+  geom_bar(stat="identity",colour="pink")
+#We see the residential Low density zoned houses to be costlier than the highly
+#populated places.
+
+```
+
+##4 Missing Data
+
+```{r}
+#a
+library(Amelia)
+data(freetrade)
+library(VIM)
+library(mice)
+freetrade[complete.cases(freetrade),] #Give the results for observed data
+freetrade[!complete.cases(freetrade),] #Give the results for unobserved data
+#to visualize the missing data we use VIM
+aggr(freetrade, prop = F, numbers = T)
+#missingness beteen variables
+marginplot(freetrade[,c("tariff","polity")]) #just using two variables to show the functioning
+
+#b
+#Using anova to check for relation between the missingness of tariff and country
+aov(freetrade$tariff~freetrade$country,freetrade)
+summary(aov(freetrade$tariff~freetrade$country,freetrade))
+
+#removing of Nepal from the data
+t1=freetrade[freetrade$country!="Nepal",]
+aov(t1$tariff~t1$country,t1) # retrying the ANOVA test
+summary(aov(t1$tariff~t1$country,t1))
+
+#removing of Philipines
+t2=freetrade[freetrade$country!="Philipines",]
+aov(t2$tariff~t2$country,t2) # retrying the ANOVA test
+summary(aov(t2$tariff~t2$country,t2))
+```
+Upon using the ANOVA test we see that the F value is high. Hence indicating no relation in the missingness of the two variables tariff and country. Upong removal of the Country Philipines the F value doesnt changes, while Nepals exclusion creates a change in the F value, stating that the variables can be related for their missingness if the countries are ommitted.
